@@ -1,4 +1,7 @@
 format:
 	rebar3 fmt -w
 
-.PHONY: format
+shell:
+	rebar3 shell
+
+.PHONY: format shell
