@@ -107,7 +107,7 @@ loop(S = #state{}) ->
                     Pid ! {MsgRef, {error, bad_timeout}},
                     loop(S)
             end;
-        {Pid, MsgRef, {cancel, Name}} ->
+        {Pid, MsgRef, {cancel, Name}} when is_pid(Pid) ->
             Events =
                 case orddict:find(Name, S#state.events) of
                     {ok, Ev} ->
