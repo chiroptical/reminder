@@ -21,8 +21,11 @@
     timeout = {{1970, 1, 1}, {0, 0, 0}}
 }).
 
+%% Experimenting with type definitions
+-spec add_minute(calendar:datetime()) -> calendar:datetime().
 add_minute({Date, {H, M, S}}) -> {Date, {H, M + 1, S}}.
 
+-spec subscribe(pid()) -> any().
 subscribe(Pid) ->
     Ref = erlang:monitor(process, whereis(?MODULE)),
     ?MODULE ! {self(), Ref, {subscribe, Pid}},
@@ -35,6 +38,7 @@ subscribe(Pid) ->
         {error, timeout}
     end.
 
+-spec add_event(string(), string(), calendar:datetime()) -> any().
 add_event(Name, Description, TimeOut) ->
     Ref = make_ref(),
     ?MODULE ! {self(), Ref, {add, Name, Description, TimeOut}},
