@@ -6,7 +6,7 @@
 %% - drop off a new cat
 %% - adopt a cat
 %% - return a cat
--module(kitty_gen_server).
+-module(kitty).
 -behaviour(gen_server).
 -export([
     start_link/0,
@@ -15,35 +15,18 @@
     handle_call/3,
     handle_info/2,
     terminate/2,
-    code_change/3
-]).
+    code_change/3,
 
--export([
     adopt_cat/4,
     drop_off/2,
     start_sanctuary/1
 ]).
 
--type color() :: red | orange | yellow | green | blue | indigo | violet.
-
--record(cat, {
-    name :: string(),
-    color = green :: color(),
-    description :: string()
-}).
--type cat() :: #cat{}.
+-include("kitty.hrl").
 
 -spec cat(string(), color(), string()) -> cat().
 cat(Name, Color, Description) ->
     #cat{name = Name, color = Color, description = Description}.
-
-%% Arguments to gen_server:start_link
-%% 1. the callback module
-%% 2. parameter to init/1, i.e. an empty FIFO queue
-%% 3. debugging options
--spec start_link() -> {atom(), pid()}.
-start_link() ->
-    gen_server:start_link(?MODULE, queue:new(), []).
 
 -spec adopt_cat(pid(), string(), color(), string()) -> any().
 adopt_cat(Pid, Name, Color, Description) ->
@@ -57,7 +40,14 @@ drop_off(Pid, Cat = #cat{}) ->
 start_sanctuary(Pid) ->
     gen_server:call(Pid, sanctuary).
 
--spec init(queue:queue()) -> any().
+%% Arguments to gen_server:start_link
+%% 1. the callback module
+%% 2. parameter to init/1, i.e. an empty FIFO queue
+%% 3. debugging options
+-spec start_link() -> {atom(), pid()}.
+start_link() ->
+    gen_server:start_link(?MODULE, queue:new(), []).
+
 init(Queue) ->
     {ok, Queue}.
 
