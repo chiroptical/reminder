@@ -4,4 +4,7 @@ format:
 shell:
 	rebar3 shell
 
-.PHONY: format shell
+diagrams:
+	bash diagrams/build-diagrams.sh
+
+.PHONY: format shell diagrams

@@ -1,7 +1,9 @@
 reminder
 =====
 
-Working through https://learnyousomeerlang.com/designing-a-concurrent-application#understanding-the-problem
+Working through: https://learnyousomeerlang.com
+
+Current section: https://learnyousomeerlang.com/finite-state-machines#a-trading-system-specification
 
 Notes
 ---

@@ -1,0 +1,10 @@
+digraph {
+  idle -> idle_wait
+  idle -> negotiate
+  idle_wait -> negotiate
+  negotiate -> negotiate
+  negotiate -> wait
+  wait -> negotiate
+  wait -> ready
+  ready -> stop
+}
