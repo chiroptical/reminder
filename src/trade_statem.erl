@@ -1,3 +1,6 @@
+%% Converting the gen_fsm to gen_statem code here. The chapter uses the gen_fsm
+%% behaviour, but that is deprecated.
+%% https://learnyousomeerlang.com/finite-state-machines#game-trading-between-two-players
 -module(trade_statem).
 -behaviour(gen_statem).
 
