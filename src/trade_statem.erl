@@ -24,9 +24,9 @@
     % code_change/4,
 
     idle/2,
-    idle/3
-    % idle_wait/2,
-    % idle_wait/3,
+    idle/3,
+    idle_wait/2,
+    idle_wait/3
     % negotiate/2,
     % negotiate/3,
     % wait/2,
@@ -132,3 +132,23 @@ idle({negotiate, OtherPid}, From, S = #state{}) ->
 idle(Event, _From, Data) ->
     unexpected(Event, idle),
     {next_state, idle, Data}.
+
+idle_wait({ask_negotiate, OtherPid}, S = #state{other = OtherPid}) ->
+    gen_statem:reply(S#state.from, ok),
+    notice(S, "starting negotiation", []),
+    {next_state, negotiate, S};
+idle_wait({accept_negotiate, OtherPid}, S = #state{other = OtherPid}) ->
+    gen_statem:reply(S#state.from, ok),
+    notice(S, "starting negotiation", []),
+    {next_state, negotiate, S};
+idle_wait(Event, Data) ->
+    unexpected(Event, idle_wait),
+    {next_state, idle_wait, Data}.
+
+idle_wait(accept_negotiate, _From, S = #state{other = OtherPid}) ->
+    accept_negotiate(OtherPid, self()),
+    notice(S, "accepting negotiation", []),
+    {reply, ok, negotiate, S};
+idle_wait(Event, _From, Data) ->
+    unexpected(Event, idle_wait),
+    {next_state, idle_wait, Data}.
