@@ -26,9 +26,9 @@
     idle/2,
     idle/3,
     idle_wait/2,
-    idle_wait/3
-    % negotiate/2,
-    % negotiate/3,
+    idle_wait/3,
+    negotiate/2,
+    negotiate/3
     % wait/2,
     % ready/2,
     % ready/3
@@ -152,3 +152,45 @@ idle_wait(accept_negotiate, _From, S = #state{other = OtherPid}) ->
 idle_wait(Event, _From, Data) ->
     unexpected(Event, idle_wait),
     {next_state, idle_wait, Data}.
+
+add_item(Item, Items) ->
+    [Item | Items].
+
+remove_item(Item, Items) ->
+    Items -- [Item].
+
+negotiate({make_offer, Item}, S = #state{own_items = OwnItems}) ->
+    do_offer(S#state.other, Item),
+    notice(S, "offering ~p", [Item]),
+    {next_state, negotiate, S#state{own_items = add_item(Item, OwnItems)}};
+negotiate({retract_offer, Item}, S = #state{own_items = OwnItems}) ->
+    undo_offer(S#state.other, Item),
+    notice(S, "cancelling offer on ~p", [Item]),
+    {next_state, negotiate, S#state{own_items = remove_item(Item, OwnItems)}};
+negotiate({do_offer, Item}, S = #state{other_items = OtherItems}) ->
+    notice(S, "other player offering ~p", [Item]),
+    {next_state, negotiate, S#state{other_items = add_item(Item, OtherItems)}};
+negotiate({undo_offer, Item}, S = #state{other_items = OtherItems}) ->
+    notice(S, "other player retracting ~p", [Item]),
+    {next_state, negotiate, S#state{other_items = remove_item(Item, OtherItems)}};
+negotiate(are_you_ready, S = #state{other = OtherPid}) ->
+    io:format("Other user is ready to trade.~n"),
+    notice(
+        S,
+        "Other user ready to transfer goods: ~n"
+        "You get ~p, The other side gets ~p",
+        [S#state.other_items, S#state.own_items]
+    ),
+    not_yet(OtherPid),
+    {next_state, negotiate, S};
+negotiate(Event, Data) ->
+    unexpected(Event, negotiate),
+    {next_state, negotiate, Data}.
+
+negotiate(ready, From, S = #state{other = OtherPid}) ->
+    are_you_ready(OtherPid),
+    notice(S, "asking if ready, waiting...", []),
+    {next_state, wait, S#state{from = From}};
+negotiate(Event, _From, Data) ->
+    unexpected(Event, negotiate),
+    {next_state, negotiate, Data}.

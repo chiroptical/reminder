@@ -7,4 +7,7 @@ shell:
 diagrams:
 	bash diagrams/build-diagrams.sh
 
-.PHONY: format shell diagrams
+lint:
+	rebar3 dialyzer
+
+.PHONY: format shell diagrams lint
