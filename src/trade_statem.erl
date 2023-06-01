@@ -20,18 +20,18 @@
 -export([
     init/1,
     callback_mode/0,
-    % terminate/3,
-    % code_change/4,
+    terminate/3,
+    code_change/4,
 
     idle/2,
     idle/3,
     idle_wait/2,
     idle_wait/3,
     negotiate/2,
-    negotiate/3
-    % wait/2,
-    % ready/2,
-    % ready/3
+    negotiate/3,
+    wait/2,
+    ready/2,
+    ready/3
 ]).
 
 %% A player's name
@@ -103,6 +103,13 @@ notify_cancel(OtherPid) ->
     monitor,
     from
 }).
+
+commit(S = #state{}) ->
+    io:format(
+        "Transaction complete for ~s. "
+        "Items sent are: ~n~p,~n recieved:~n~p.~n",
+        [S#state.name, S#state.own_items, S#state.other_items]
+    ).
 
 init(Name) ->
     {ok, idle, #state{name = Name}}.
@@ -194,3 +201,72 @@ negotiate(ready, From, S = #state{other = OtherPid}) ->
 negotiate(Event, _From, Data) ->
     unexpected(Event, negotiate),
     {next_state, negotiate, Data}.
+
+wait({do_offer, Item}, S = #state{other_items = OtherItems}) ->
+    gen_statem:call(S#state.from, offer_changed),
+    notice(S, "other side offering ~p", [Item]),
+    {next_state, negotiate, S#state{other_items = add_item(Item, OtherItems)}};
+wait({undo_offer, Item}, S = #state{other_items = OtherItems}) ->
+    gen_statem:call(S#state.from, offer_changed),
+    notice(S, "other side cancelling offer of ~p", [Item]),
+    {next_state, negotiate, S = #state{other_items = remove_item(Item, OtherItems)}};
+wait(are_you_ready, S = #state{}) ->
+    am_ready(S#state.other),
+    notice(S, "asked if ready, I am. waiting for reply", []),
+    {next_state, wait, S};
+wait(not_yet, S = #state{}) ->
+    notice(S, "Other side not ready yet", []),
+    {next_state, wait, S};
+wait('ready!', S = #state{}) ->
+    am_ready(S#state.other),
+    acknowledge_transfer(S#state.other),
+    gen_statem:call(S#state.from, ok),
+    notice(S, "Other side is ready, Moving to ready", []),
+    {next_state, ready, S};
+wait(Event, Data) ->
+    unexpected(Event, negotiate),
+    {next_state, wait, Data}.
+
+priority(OwnPid, OtherPid) when OwnPid > OtherPid -> true;
+priority(OwnPid, OtherPid) when OwnPid < OtherPid -> false.
+
+ready(acknowledge, S = #state{}) ->
+    case priority(self(), S#state.other) of
+        true ->
+            try
+                notice(S, "asking for commit", []),
+                ready_commit = ask_commit(S#state.other),
+                notice(S, "ordering commit", []),
+                ok = do_commit(S#state.other),
+                notice(S, "committing...", []),
+                commit(S),
+                {stop, normal, S}
+            catch
+                Class:Reason ->
+                    notice(S, "commit failed...", []),
+                    {stop, {Class, Reason}, S}
+            end;
+        false ->
+            {next_state, ready, S}
+    end;
+ready(Event, Data) ->
+    unexpected(Event, ready),
+    {next_state, ready, Data}.
+
+ready(ask_commit, _From, S) ->
+    notice(S, "replying to ask_commit", []),
+    {reply, ready_commit, ready, S};
+ready(do_commit, _From, S) ->
+    notice(S, "commit!", []),
+    {stop, normal, ok, S};
+ready(Event, _From, Data) ->
+    unexpected(Event, ready),
+    {next_state, ready, Data}.
+
+code_change(_OldVersion, StateName, Data, _Extra) ->
+    {ok, StateName, Data}.
+
+terminate(normal, ready, S = #state{}) ->
+    notice(S, "FSM leaving", []);
+terminate(_Reason, _StateName, _StateData) ->
+    ok.
