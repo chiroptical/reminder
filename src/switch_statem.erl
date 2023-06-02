@@ -14,13 +14,11 @@
     callback_mode/0,
     terminate/3,
     code_change/4,
-    flip/3
+    on/3,
+    off/3
 ]).
 
--type switch_state() :: on | off.
-
 -record(state, {
-    switch_is = on :: switch_state(),
     flipped = 0 :: non_neg_integer()
 }).
 
@@ -34,19 +32,23 @@ how_many(Pid) ->
     gen_statem:call(Pid, how_many).
 
 init([]) ->
-    {ok, flip, #state{}}.
+    {ok, off, #state{}}.
 
-flip({call, From}, flip, S = #state{}) ->
-    Next =
-        case S#state.switch_is of
-            off -> on;
-            on -> off
-        end,
-    {next_state, flip, S#state{switch_is = Next, flipped = S#state.flipped + 1}, [
-        {reply, From, Next}
+on({call, From}, flip, S = #state{}) ->
+    {next_state, off, S#state{flipped = S#state.flipped + 1}, [
+        {reply, From, off}
     ]};
-flip({call, From}, how_many, S = #state{}) ->
-    {next_state, flip, S, [
+on({call, From}, how_many, S = #state{}) ->
+    {next_state, on, S, [
+        {reply, From, S#state.flipped}
+    ]}.
+
+off({call, From}, flip, S = #state{}) ->
+    {next_state, on, S#state{flipped = S#state.flipped + 1}, [
+        {reply, From, on}
+    ]};
+off({call, From}, how_many, S = #state{}) ->
+    {next_state, off, S, [
         {reply, From, S#state.flipped}
     ]}.
 
