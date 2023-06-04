@@ -3,7 +3,7 @@ reminder
 
 Working through: https://learnyousomeerlang.com
 
-Current section: https://learnyousomeerlang.com/finite-state-machines#game-trading-between-two-players
+Current section: https://learnyousomeerlang.com/building-applications-with-otp
 
 Notes
 ---
