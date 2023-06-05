@@ -1,0 +1,12 @@
+digraph {
+  off // the machine is off
+  on // the machine is on, but not warmed up
+  warmed_up // the machine is on and warmed up
+  ready_to_brew // the machine is warmed up and coffee is loaded
+  brewing // the machine is brewing coffee
+  brewed // the coffee machine is done
+
+  load_coffee // load coffee in the machine if it isn't loaded
+  empty_coffee // empty coffee grounds from the machine
+  pour_cup // empty coffee from the machine
+}
