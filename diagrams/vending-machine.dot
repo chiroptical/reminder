@@ -6,7 +6,7 @@ digraph {
   }
 
   subgraph cluster_1 {
-    label = "Messages"
+    label = "Events"
     flip_switch
     insert_coin
     request_soda // either gets a soda, or tells you how much a soda is
