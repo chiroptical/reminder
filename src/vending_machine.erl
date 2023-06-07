@@ -70,7 +70,7 @@ on({call, From}, {insert_coin, Coin}, S = #state{inserted_coins = Coins}) ->
             %% TODO: Ideally we minimize the overall value
             {next_state, on,
                 S#state{
-                    inserted_coins = 
+                    inserted_coins =
                         maps:update_with(Coin, fun(Count) -> Count + 1 end, 1, Coins)
                 },
                 [
@@ -107,6 +107,27 @@ callback_mode() ->
     state_functions.
 
 %% module helpers
+
+add_coin(Coin, Coins) ->
+    maps:update_with(Coin, fun(Count) -> Count + 1 end, 1, Coins).
+
+optimize_coins(Limit, Coins, Optimized) when Limit < 5 ->
+    {optimized, Coins, Optimized};
+optimize_coins(Limit, Coins, Optimized) ->
+    case select_largest_possible_coin(Limit, Coins) of
+        empty -> {optimized, Coins, Optimized}
+    end.
+
+select_largest_possible_coin(Limit, Coins) ->
+    Quarters = maps:get(quarter, Coins, 0),
+    Dimes = maps:get(dime, Coins, 0),
+    Nickels = maps:get(nickel, Coins, 0),
+    case {Quarters, Dimes, Nickels} of
+        {X, _, _} when X > 0, Limit >= 25 -> {quarter, maps:update(quarter, X - 1, Coins)};
+        {_, X, _} when X > 0, Limit >= 10 -> {dime, maps:update(dime, X - 1, Coins)};
+        {_, _, X} when X > 0, Limit >= 5 -> {nickel, maps:update(nickel, X - 1, Coins)};
+        _ -> empty
+    end.
 
 coin_value(Coin) ->
     case Coin of
