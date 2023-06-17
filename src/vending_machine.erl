@@ -19,6 +19,11 @@
     off/3
 ]).
 
+-export([
+    add_coin/2,
+    optimize_coins/3
+]).
+
 -type coin() :: nickel | dime | quarter.
 
 -record(state, {
@@ -111,10 +116,15 @@ callback_mode() ->
 add_coin(Coin, Coins) ->
     maps:update_with(Coin, fun(Count) -> Count + 1 end, 1, Coins).
 
+%% Given a limit, e.g. 150 cents, get as close to that as we possibly can
+%% without going over.
 optimize_coins(Limit, Coins, Optimized) when Limit < 5 ->
     {optimized, Coins, Optimized};
 optimize_coins(Limit, Coins, Optimized) ->
     case select_largest_possible_coin(Limit, Coins) of
+        {quarter, NewCoins} -> optimize_coins(Limit, NewCoins, add_coin(quarter, Optimized));
+        {dime, NewCoins} -> optimize_coins(Limit, NewCoins, add_coin(dime, Optimized));
+        {nickel, NewCoins} -> optimize_coins(Limit, NewCoins, add_coin(nickel, Optimized));
         empty -> {optimized, Coins, Optimized}
     end.
 
