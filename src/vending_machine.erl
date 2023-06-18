@@ -116,16 +116,32 @@ callback_mode() ->
 add_coin(Coin, Coins) ->
     maps:update_with(Coin, fun(Count) -> Count + 1 end, 1, Coins).
 
+recurse_optimize(Coin, Limit, Coins, Optimized) ->
+    optimize_coins(Limit - coin_value(Coin), Coins, add_coin(Coin, Optimized)).
+
 %% Given a limit, e.g. 150 cents, get as close to that as we possibly can
 %% without going over.
-optimize_coins(Limit, Coins, Optimized) when Limit < 5 ->
+optimize_coins(Limit, Coins, Optimized) when Limit == 0 ->
+    io:format("Limit is zero, optimized"),
     {optimized, Coins, Optimized};
+optimize_coins(Limit, Coins, Optimized) when Limit =< 5 ->
+    case select_smallest_possible_coin(Coins) of
+        {Coin, NewCoins} ->
+            {optimized, NewCoins, add_coin(Coin, Optimized)};
+        empty ->
+            {optimized, Coins, Optimized}
+    end;
 optimize_coins(Limit, Coins, Optimized) ->
     case select_largest_possible_coin(Limit, Coins) of
-        {quarter, NewCoins} -> optimize_coins(Limit, NewCoins, add_coin(quarter, Optimized));
-        {dime, NewCoins} -> optimize_coins(Limit, NewCoins, add_coin(dime, Optimized));
-        {nickel, NewCoins} -> optimize_coins(Limit, NewCoins, add_coin(nickel, Optimized));
+        {Coin, NewCoins} -> recurse_optimize(Coin, Limit, NewCoins, Optimized);
         empty -> {optimized, Coins, Optimized}
+    end.
+
+subtract_coin(Coin, Coins) ->
+    case maps:get(Coin, Coins, 0) of
+        0 -> empty;
+        1 -> {Coin, maps:remove(Coin, Coins)};
+        X -> {Coin, maps:update(Coin, X - 1, Coins)}
     end.
 
 select_largest_possible_coin(Limit, Coins) ->
@@ -133,9 +149,20 @@ select_largest_possible_coin(Limit, Coins) ->
     Dimes = maps:get(dime, Coins, 0),
     Nickels = maps:get(nickel, Coins, 0),
     case {Quarters, Dimes, Nickels} of
-        {X, _, _} when X > 0, Limit >= 25 -> {quarter, maps:update(quarter, X - 1, Coins)};
-        {_, X, _} when X > 0, Limit >= 10 -> {dime, maps:update(dime, X - 1, Coins)};
-        {_, _, X} when X > 0, Limit >= 5 -> {nickel, maps:update(nickel, X - 1, Coins)};
+        {X, _, _} when X > 0, Limit >= 25 -> subtract_coin(quarter, Coins);
+        {_, X, _} when X > 0, Limit >= 10 -> subtract_coin(dime, Coins);
+        {_, _, X} when X > 0, Limit >= 5 -> subtract_coin(nickel, Coins);
+        _ -> empty
+    end.
+
+select_smallest_possible_coin(Coins) ->
+    Quarters = maps:get(quarter, Coins, 0),
+    Dimes = maps:get(dime, Coins, 0),
+    Nickels = maps:get(nickel, Coins, 0),
+    case {Quarters, Dimes, Nickels} of
+        {_, _, X} when X > 0 -> subtract_coin(nickel, Coins);
+        {_, X, _} when X > 0 -> subtract_coin(dime, Coins);
+        {X, _, _} when X > 0 -> subtract_coin(quarter, Coins);
         _ -> empty
     end.
 
