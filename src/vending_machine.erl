@@ -121,8 +121,7 @@ recurse_optimize(Coin, Limit, Coins, Optimized) ->
 
 %% Given a limit, e.g. 150 cents, get as close to that as we possibly can
 %% without going over.
-optimize_coins(Limit, Coins, Optimized) when Limit == 0 ->
-    io:format("Limit is zero, optimized"),
+optimize_coins(Limit, Coins, Optimized) when Limit =< 0 ->
     {optimized, Coins, Optimized};
 optimize_coins(Limit, Coins, Optimized) when Limit =< 5 ->
     case select_smallest_possible_coin(Coins) of
@@ -149,9 +148,9 @@ select_largest_possible_coin(Limit, Coins) ->
     Dimes = maps:get(dime, Coins, 0),
     Nickels = maps:get(nickel, Coins, 0),
     case {Quarters, Dimes, Nickels} of
-        {X, _, _} when X > 0, Limit >= 25 -> subtract_coin(quarter, Coins);
-        {_, X, _} when X > 0, Limit >= 10 -> subtract_coin(dime, Coins);
-        {_, _, X} when X > 0, Limit >= 5 -> subtract_coin(nickel, Coins);
+        {X, _, _} when X > 0, Limit > 10 -> subtract_coin(quarter, Coins);
+        {_, X, _} when X > 0, Limit > 5 -> subtract_coin(dime, Coins);
+        {_, _, X} when X > 0 -> subtract_coin(nickel, Coins);
         _ -> empty
     end.
 

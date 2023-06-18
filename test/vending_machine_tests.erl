@@ -39,3 +39,18 @@ optimize_coins_one_fifty_from_quarters_dimes_over_test() ->
     {optimized, NewCoins, Optimized} = vending_machine:optimize_coins(150, Coins, maps:new()),
     0 = maps:size(NewCoins),
     ?assertEqual(Coins, Optimized).
+
+optimize_coins_select_nickel_over_dime_test() ->
+    Coins = #{quarter => 1, dime => 1, nickel => 1},
+    {optimized, NewCoins, Optimized} = vending_machine:optimize_coins(30, Coins, maps:new()),
+    ?assertEqual(#{dime => 1}, NewCoins),
+    ?assertEqual(#{quarter => 1, nickel => 1}, Optimized).
+
+%% Here, we need to select the dime be equal or over 31. The number 31 is
+%% obviously contrived because you can't make 31 cents out of nickels, dimes,
+%% and quarters.
+optimize_coins_select_dime_over_nickel_test() ->
+    Coins = #{quarter => 1, dime => 1, nickel => 1},
+    {optimized, NewCoins, Optimized} = vending_machine:optimize_coins(31, Coins, maps:new()),
+    ?assertEqual(#{nickel => 1}, NewCoins),
+    ?assertEqual(#{quarter => 1, dime => 1}, Optimized).
