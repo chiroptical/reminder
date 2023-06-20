@@ -9,7 +9,7 @@
 start_link(Kind) ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, Kind).
 
--type kind() :: lenient | angry | jerk.
+-type kind() :: lenient | angry | jerk | jamband.
 
 -spec init(kind()) -> any().
 init(lenient) ->
@@ -18,6 +18,11 @@ init(angry) ->
     init({one_for_one, 2, 60});
 init(jerk) ->
     init({one_for_one, 1, 60});
+init(jamband) ->
+    {ok,
+        {{simple_one_for_one, 3, 60}, [
+            {jam_musician, {musicians, start_link, []}, temporary, 1000, worker, [musicians]}
+        ]}};
 init({RestartStrategy, MaxRestart, MaxTime}) ->
     {ok,
         {{RestartStrategy, MaxRestart, MaxTime}, [
