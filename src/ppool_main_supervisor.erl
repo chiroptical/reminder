@@ -30,9 +30,10 @@ init([]) ->
 start_pool(Name, Limit, MFA) ->
     MaxShutdown = 10500,
     ChildSpec =
-        {Name, {ppool_sup, start_link, [Name, Limit, MFA]}, permanent, MaxShutdown, supervisor, [
-            ppool_sup
-        ]},
+        {Name, {ppool_supervisor, start_link, [Name, Limit, MFA]}, permanent, MaxShutdown,
+            supervisor, [
+                ppool_supervisor
+            ]},
     supervisor:start_child(ppool, ChildSpec).
 
 stop_pool(Name) ->
