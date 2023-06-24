@@ -82,3 +82,12 @@ handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
 handle_call(_Msg, _From, State) ->
     {noreply, State}.
+
+handle_cast(_, State) ->
+    {noreply, State}.
+
+code_change(_, _, _) ->
+    ok.
+
+terminate(_, _) ->
+    ok.
