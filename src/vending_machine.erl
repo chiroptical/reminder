@@ -22,6 +22,7 @@
 %% For testing
 -export([
     add_coin/2,
+    add_coins/2,
     optimize_coins/3,
     make_change/3
 ]).
@@ -114,17 +115,31 @@ callback_mode() ->
 add_coin(Coin, Coins) ->
     maps:update_with(Coin, fun(Count) -> Count + 1 end, 1, Coins).
 
-recurse_optimize(Coin, Limit, Coins, Optimized) ->
-    optimize_coins(Limit - coin_value(Coin), Coins, add_coin(Coin, Optimized)).
+add_coins(Coins, Bank) ->
+    maps:merge_with(fun(_Key, X, Y) -> X + Y end, Coins, Bank).
 
 %% Given a cost, coins in the machine, and bank, attempt to make change for the
 %% customer. If we are unable, return an error for now. We may ask the user to
 %% press the button to confirm we can move forward without providing change. We
 %% can also let the customer know when they interact with the machine without
 %% any nickels we can't make change.
-%% TODO: Finish this function, see tests in vending_machine_tests.erl
-make_change(_Cost, _Coins, _Bank) ->
-    ok.
+make_change(Cost, Coins, Bank) ->
+    CoinValue = coins_value(Coins),
+    case CoinValue >= Cost of
+        true ->
+            CustomerExpects = CoinValue - Cost,
+            {ok, NextBank, Change} = optimize_coins(
+                CustomerExpects, add_coins(Coins, Bank), maps:new()
+            ),
+            ChangeValue = coins_value(Change),
+            io:format("CustomerExpects ~p; ChangeValue: ~p~n", [CustomerExpects, ChangeValue]),
+            case ChangeValue == CustomerExpects of
+                false -> unable_to_make_change;
+                true -> {ok, Change, NextBank}
+            end;
+        false ->
+            unable_to_cover_cost
+    end.
 
 %% Given a limit, e.g. 150 cents, get as close to that as we possibly can
 %% without going over.
@@ -142,6 +157,9 @@ optimize_coins(Limit, Coins, Optimized) ->
         {Coin, NewCoins} -> recurse_optimize(Coin, Limit, NewCoins, Optimized);
         empty -> {ok, Coins, Optimized}
     end.
+
+recurse_optimize(Coin, Limit, Coins, Optimized) ->
+    optimize_coins(Limit - coin_value(Coin), Coins, add_coin(Coin, Optimized)).
 
 subtract_coin(Coin, Coins) ->
     case maps:get(Coin, Coins, 0) of

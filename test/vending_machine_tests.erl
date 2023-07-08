@@ -55,6 +55,19 @@ optimize_coins_select_dime_over_nickel_test() ->
     ?assertEqual(#{nickel => 1}, NewCoins),
     ?assertEqual(#{quarter => 1, dime => 1}, Optimized).
 
+add_coins_empty_test() ->
+    ?assertEqual(#{}, vending_machine:add_coins(#{}, #{})).
+
+add_coins_not_same_key_test() ->
+    X = #{quarter => 1},
+    Y = #{nickel => 1},
+    ?assertEqual(#{quarter => 1, nickel => 1}, vending_machine:add_coins(X, Y)).
+
+make_change_unable_to_cover_cost_test() ->
+    Bank = #{nickel => 1},
+    Coins = #{quarter => 1},
+    unable_to_cover_cost = vending_machine:make_change(50, Coins, Bank).
+
 make_change_none_necessary_test() ->
     Bank = #{},
     Coins = #{quarter => 1},
@@ -65,11 +78,39 @@ make_change_none_necessary_test() ->
 make_change_simple_test() ->
     Bank = #{nickel => 1},
     Coins = #{quarter => 1},
-    {ok, Change, NewBank} = vending_machine:make_change(20, Coins, Bank),
-    ?assertEqual(#{nickel => 1}, Change),
-    0 = maps:size(NewBank).
+    {ok, Change, NextBank} = vending_machine:make_change(20, Coins, Bank),
+    ?assertEqual(#{quarter => 1}, NextBank),
+    ?assertEqual(#{nickel => 1}, Change).
 
-make_change_unable_to_make_test() ->
-    Bank = #{},
+make_change_unable_to_make_change_test() ->
+    Bank = #{dime => 1},
     Coins = #{quarter => 1},
     unable_to_make_change = vending_machine:make_change(20, Coins, Bank).
+
+make_change_large_difference_twenty_test() ->
+    Bank = #{quarter => 4, dime => 4, nickel => 4},
+    Coins = #{quarter => 4, dime => 4, nickel => 4},
+    {ok, Change, NextBank} = vending_machine:make_change(20, Coins, Bank),
+    ?assertEqual(#{quarter => 4, dime => 4, nickel => 8}, NextBank),
+    ?assertEqual(#{quarter => 4, dime => 4}, Change).
+
+make_change_large_difference_twenty_five_test() ->
+    Bank = #{quarter => 4, dime => 4, nickel => 4},
+    Coins = #{quarter => 4, dime => 4, nickel => 4},
+    {ok, Change, NextBank} = vending_machine:make_change(25, Coins, Bank),
+    ?assertEqual(#{quarter => 3, dime => 7, nickel => 8}, NextBank),
+    ?assertEqual(#{quarter => 5, dime => 1}, Change).
+
+make_change_large_difference_hundred_test() ->
+    Bank = #{quarter => 4, dime => 4, nickel => 4},
+    Coins = #{quarter => 4, dime => 4, nickel => 4},
+    {ok, Change, NextBank} = vending_machine:make_change(100, Coins, Bank),
+    ?assertEqual(#{quarter => 6, dime => 7, nickel => 8}, NextBank),
+    ?assertEqual(#{quarter => 2, dime => 1}, Change).
+
+make_change_no_change_needed_from_bank_test() ->
+    Bank = #{},
+    Coins = #{quarter => 6},
+    {ok, Change, NextBank} = vending_machine:make_change(100, Coins, Bank),
+    ?assertEqual(#{quarter => 4}, NextBank),
+    ?assertEqual(#{quarter => 2}, Change).
